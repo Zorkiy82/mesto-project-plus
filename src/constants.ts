@@ -1,0 +1,5 @@
+export const RES_STATUS_OK = 200;
+export const RES_STATUS_CREATED = 201;
+export const RES_STATUS_BAD_REQUEST = 400;
+export const RES_STATUS_NOT_FOUND = 404;
+export const RES_STATUS_INTERNAL_SERVER_ERROR = 500;
