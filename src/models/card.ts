@@ -1,6 +1,6 @@
 import mongoose, { Date, Schema } from 'mongoose';
 // eslint-disable-next-line no-unused-vars
-import User from './user';
+import user from './user';
 import { ICard } from '../types';
 
 const cardSchema = new Schema<ICard>({
@@ -16,10 +16,10 @@ const cardSchema = new Schema<ICard>({
   },
   owner: {
     type: Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'user',
     required: true,
   },
-  likes: [{ type: Schema.Types.ObjectId, ref: 'User', default: [] }],
+  likes: [{ type: Schema.Types.ObjectId, ref: 'user', default: [] }],
   createdAt: { type: Date, default: Date.now },
 });
 

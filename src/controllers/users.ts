@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
-import User from '../models/user';
 import { IUserRequest } from '../types';
 import { RES_STATUS_OK, RES_STATUS_CREATED } from '../constants';
+import User from '../models/user';
 
 export const getUsers = async (
   req: Request,
@@ -63,17 +63,17 @@ const updateUser = async (
   expectedKeys = ['name', 'about', 'avatar'],
 ) => {
   try {
-    const newUserData = new Map();
+    const newUser = new Map();
 
     expectedKeys.forEach((key) => {
       const keyData = req.body[key];
       if (keyData) {
-        newUserData.set(key, keyData);
+        newUser.set(key, keyData);
       }
     });
     const user = await User.findByIdAndUpdate(
       req.user?._id,
-      Object.fromEntries(newUserData),
+      Object.fromEntries(newUser),
       {
         new: true,
         runValidators: true,
