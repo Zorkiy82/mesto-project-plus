@@ -1,4 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { IUserRequest } from '../types';
 import { RES_STATUS_OK, RES_STATUS_CREATED } from '../constants';
 import User from '../models/user';
@@ -23,8 +25,24 @@ export const createUser = async (
   next: NextFunction,
 ) => {
   try {
-    const { name, about, avatar } = req.body;
-    const user = await User.create({ name, about, avatar });
+    const {
+      name,
+      about,
+      avatar,
+      email,
+      password,
+    } = req.body;
+
+    const hash = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      name,
+      about,
+      avatar,
+      email,
+      password: hash,
+    });
+
     return res.status(RES_STATUS_CREATED).send(user);
   } catch (error) {
     const errorData = {
@@ -108,3 +126,30 @@ export const updateUserAvatar = (
   res: Response,
   next: NextFunction,
 ) => updateUser(req, res, next, ['avatar']);
+
+export const login = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+    const isMatches = await bcrypt.compare(password, String(user?.password));
+    let token = '';
+    if (!isMatches) {
+      const error = new Error('Неправильные почта или пароль');
+      error.name = 'Unauthorized';
+      throw error;
+    }
+
+    if (user) {
+      token = jwt.sign(
+        { _id: user._id },
+        'some-secret-key',
+        { expiresIn: '7d' },
+      );
+    }
+
+    return res.status(RES_STATUS_OK).send({ token });
+  } catch (error) {
+    const errorData = { error };
+    return next(errorData);
+  }
+};

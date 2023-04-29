@@ -1,4 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
+import isEmail from 'validator/lib/isEmail';
 import { IUser } from '../types';
 
 const userSchema = new Schema<IUser>({
@@ -6,15 +7,28 @@ const userSchema = new Schema<IUser>({
     type: String,
     minlength: 2,
     maxlength: 30,
-    required: true,
+    default: 'Жак-Ив Кусто',
   },
   about: {
     type: String,
     minlength: 2,
     maxlength: 200,
-    required: true,
+    default: 'Исследователь',
   },
   avatar: {
+    type: String,
+    default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    validate: {
+      validator: (v: string) => isEmail(v),
+      message: 'Не валидное значение email',
+    },
+  },
+  password: {
     type: String,
     required: true,
   },

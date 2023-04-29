@@ -1,6 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
 import { IErrorData, IUserRequest } from './types';
-import { RES_STATUS_BAD_REQUEST, RES_STATUS_INTERNAL_SERVER_ERROR, RES_STATUS_NOT_FOUND } from './constants';
+import {
+  RES_STATUS_BAD_REQUEST,
+  RES_STATUS_INTERNAL_SERVER_ERROR,
+  RES_STATUS_NOT_FOUND,
+  RES_STATUS_UNAUTORIZED,
+} from './constants';
 
 export function fakeAuthorization(
   req: Request,
@@ -24,6 +29,9 @@ export async function handleError(
   try {
     if (error.name === 'NotFound') {
       return res.status(RES_STATUS_NOT_FOUND).send({ message: error.message });
+    }
+    if (error.name === 'Unauthorized') {
+      return res.status(RES_STATUS_UNAUTORIZED).send({ message: error.message });
     }
     if (error.name === 'ValidationError') {
       return res
