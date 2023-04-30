@@ -30,15 +30,24 @@ export const createCard = async (req: IUserRequest, res: Response, next: NextFun
   }
 };
 
-export const deleteCardById = async (req: Request, res: Response, next: NextFunction) => {
+export const deleteCardById = async (req: IUserRequest, res: Response, next: NextFunction) => {
   try {
-    const card = await Сard.findByIdAndDelete(req.params.cardId);
+    const card = await Сard.findById(req.params.cardId);
     if (!card) {
       const error = new Error('Карточка с указанным _id не найдена');
       error.name = 'NotFound';
       throw error;
     }
 
+    const isOwner = card.owner.toString() === req.user?._id;
+
+    if (!isOwner) {
+      const error = new Error('Карточка создана другим пользователем');
+      error.name = 'Unauthorized';
+      throw error;
+    }
+
+    await Сard.findByIdAndDelete(req.params.cardId);
     return res.status(RES_STATUS_OK).send({ message: 'Пост удалён' });
   } catch (error) {
     const errorData = { error };

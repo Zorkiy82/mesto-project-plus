@@ -5,19 +5,60 @@ import { IUserRequest } from '../types';
 import { RES_STATUS_OK, RES_STATUS_CREATED } from '../constants';
 import User from '../models/user';
 
-export const getUsers = async (
-  req: Request,
+// eslint-disable-next-line no-shadow, no-unused-vars
+enum GetUserAction {
+  // eslint-disable-next-line no-unused-vars
+  All = 'All',
+  // eslint-disable-next-line no-unused-vars
+  ById = 'ByID',
+  // eslint-disable-next-line no-unused-vars
+  Current = 'Current',
+}
+
+const handleGetUsers = async (
+  req: IUserRequest,
   res: Response,
   next: NextFunction,
+  action = GetUserAction.Current,
 ) => {
   try {
-    const user = await User.find({});
+    let user = null;
+    if (action === GetUserAction.All) user = await User.find({});
+    if (action === GetUserAction.ById) user = await User.findById(req.params.userId);
+    if (action === GetUserAction.Current) user = await User.findById(req.user?._id);
+
+    if (!user) {
+      const error = new Error('Пользователь по указанному _id не найден');
+      error.name = 'NotFound';
+      throw error;
+    }
+
     return res.status(RES_STATUS_OK).send(user);
   } catch (error) {
     const errorData = { error };
     return next(errorData);
   }
 };
+
+export const getUsers = (
+  req: IUserRequest,
+  res: Response,
+  next: NextFunction,
+) => handleGetUsers(req, res, next, GetUserAction.All);
+
+export const getUserById = (
+  req: IUserRequest,
+  res: Response,
+  next: NextFunction,
+) => handleGetUsers(req, res, next, GetUserAction.ById);
+
+export const getCurentUser = (
+  req: IUserRequest,
+  res: Response,
+  next: NextFunction,
+) => handleGetUsers(req, res, next, GetUserAction.Current);
+
+// -------------------------------------------------------------
 
 export const createUser = async (
   req: Request,
@@ -54,25 +95,7 @@ export const createUser = async (
   }
 };
 
-export const getUserById = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const user = await User.findById(req.params.userId);
-    if (!user) {
-      const error = new Error('Пользователь по указанному _id не найден');
-      error.name = 'NotFound';
-      throw error;
-    }
-
-    return res.status(RES_STATUS_OK).send(user);
-  } catch (error) {
-    const errorData = { error };
-    return next(errorData);
-  }
-};
+// -------------------------------------------------------------
 
 const updateUser = async (
   req: IUserRequest,
@@ -127,10 +150,12 @@ export const updateUserAvatar = (
   next: NextFunction,
 ) => updateUser(req, res, next, ['avatar']);
 
+// -------------------------------------------------------------
+
 export const login = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select('+password');
     const isMatches = await bcrypt.compare(password, String(user?.password));
     let token = '';
     if (!isMatches) {
