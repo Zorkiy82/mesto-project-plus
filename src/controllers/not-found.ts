@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
+import NotFoundError from '../utils/not-found-error';
 
 const notFoundController = async (
   req: Request,
@@ -6,9 +7,7 @@ const notFoundController = async (
   next: NextFunction,
 ) => {
   try {
-    const error = new Error('Статус 404 - страница не найдена');
-    error.name = 'NotFound';
-    throw error;
+    throw new NotFoundError('Статус 404 - страница не найдена');
   } catch (error) {
     const errorData = { error };
     return next(errorData);

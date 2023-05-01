@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { IUserRequest } from '../types';
+import UnauthorizedError from '../utils/unauthorized-error';
 
 const auth = async (
   req: Request,
@@ -11,9 +12,7 @@ const auth = async (
     const { authorization } = req.headers;
 
     if (!authorization || !authorization.startsWith('Bearer ')) {
-      const error = new Error('Необходима авторизация');
-      error.name = 'Unauthorized';
-      throw error;
+      throw new UnauthorizedError('Необходима авторизация');
     }
 
     try {

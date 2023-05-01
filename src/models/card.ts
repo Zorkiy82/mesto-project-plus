@@ -1,4 +1,5 @@
 import mongoose, { Date, Schema } from 'mongoose';
+import { urlValidator } from '../utils/validation';
 // eslint-disable-next-line no-unused-vars
 import user from './user';
 import { ICard } from '../types';
@@ -12,6 +13,10 @@ const cardSchema = new Schema<ICard>({
   },
   link: {
     type: String,
+    validate: {
+      validator: (v: string) => urlValidator(v),
+      message: 'Не валидное значение link',
+    },
     required: true,
   },
   owner: {

@@ -4,6 +4,8 @@ import jwt from 'jsonwebtoken';
 import { IUserRequest } from '../types';
 import { RES_STATUS_OK, RES_STATUS_CREATED } from '../constants';
 import User from '../models/user';
+import NotFoundError from '../utils/not-found-error';
+import UnauthorizedError from '../utils/unauthorized-error';
 
 // eslint-disable-next-line no-shadow, no-unused-vars
 enum GetUserAction {
@@ -28,15 +30,12 @@ const handleGetUsers = async (
     if (action === GetUserAction.Current) user = await User.findById(req.user?._id);
 
     if (!user) {
-      const error = new Error('Пользователь по указанному _id не найден');
-      error.name = 'NotFound';
-      throw error;
+      throw new NotFoundError('Пользователь по указанному _id не найден');
     }
 
     return res.status(RES_STATUS_OK).send(user);
   } catch (error) {
-    const errorData = { error };
-    return next(errorData);
+    return next({ error });
   }
 };
 
@@ -121,9 +120,7 @@ const updateUser = async (
       },
     );
     if (!user) {
-      const error = new Error('Пользователь по указанному _id не найден');
-      error.name = 'NotFound';
-      throw error;
+      throw new NotFoundError('Пользователь по указанному _id не найден');
     }
 
     return res.status(RES_STATUS_OK).send(user);
@@ -159,9 +156,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     const isMatches = await bcrypt.compare(password, String(user?.password));
     let token = '';
     if (!isMatches) {
-      const error = new Error('Неправильные почта или пароль');
-      error.name = 'Unauthorized';
-      throw error;
+      throw new UnauthorizedError('Неправильные почта или пароль');
     }
 
     if (user) {

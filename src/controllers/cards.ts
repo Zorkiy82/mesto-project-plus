@@ -2,6 +2,8 @@ import { NextFunction, Request, Response } from 'express';
 import Сard from '../models/card';
 import { IUserRequest } from '../types';
 import { RES_STATUS_CREATED, RES_STATUS_OK } from '../constants';
+import NotFoundError from '../utils/not-found-error';
+import UnauthorizedError from '../utils/unauthorized-error';
 
 export const getCards = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -34,17 +36,13 @@ export const deleteCardById = async (req: IUserRequest, res: Response, next: Nex
   try {
     const card = await Сard.findById(req.params.cardId);
     if (!card) {
-      const error = new Error('Карточка с указанным _id не найдена');
-      error.name = 'NotFound';
-      throw error;
+      throw new NotFoundError('Карточка с указанным _id не найдена');
     }
 
     const isOwner = card.owner.toString() === req.user?._id;
 
     if (!isOwner) {
-      const error = new Error('Карточка создана другим пользователем');
-      error.name = 'Unauthorized';
-      throw error;
+      throw new UnauthorizedError('Карточка создана другим пользователем');
     }
 
     await Сard.findByIdAndDelete(req.params.cardId);
@@ -63,9 +61,7 @@ export const likeCard = async (req: IUserRequest, res: Response, next: NextFunct
       { new: true },
     ).populate(['owner', 'likes']);
     if (!card) {
-      const error = new Error('Передан несуществующий _id карточки');
-      error.name = 'NotFound';
-      throw error;
+      throw new NotFoundError('Передан несуществующий _id карточки');
     }
 
     return res.status(RES_STATUS_OK).send(card);
@@ -83,9 +79,7 @@ export const dislikeCard = async (req: IUserRequest, res: Response, next: NextFu
       { new: true },
     ).populate(['owner', 'likes']);
     if (!card) {
-      const error = new Error('Передан несуществующий _id карточки');
-      error.name = 'NotFound';
-      throw error;
+      throw new NotFoundError('Передан несуществующий _id карточки');
     }
 
     return res.status(RES_STATUS_OK).send(card);

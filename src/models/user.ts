@@ -1,23 +1,29 @@
 import mongoose, { Schema } from 'mongoose';
 import isEmail from 'validator/lib/isEmail';
+import { urlValidator } from '../utils/validation';
 import { IUser } from '../types';
+import { defaultUser } from '../constants';
 
 const userSchema = new Schema<IUser>({
   name: {
     type: String,
     minlength: 2,
     maxlength: 30,
-    default: 'Жак-Ив Кусто',
+    default: defaultUser.name,
   },
   about: {
     type: String,
     minlength: 2,
     maxlength: 200,
-    default: 'Исследователь',
+    default: defaultUser.about,
   },
   avatar: {
     type: String,
-    default: 'https://pictures.s3.yandex.net/resources/jacques-cousteau_1604399756.png',
+    validate: {
+      validator: (v: string) => urlValidator(v),
+      message: 'Не валидное значение url',
+    },
+    default: defaultUser.avatar,
   },
   email: {
     type: String,

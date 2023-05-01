@@ -2,18 +2,23 @@ import { NextFunction, Request, Response } from 'express';
 import { IErrorData } from '../types';
 import {
   RES_STATUS_BAD_REQUEST,
+  RES_STATUS_CONFLICT,
   RES_STATUS_INTERNAL_SERVER_ERROR,
   RES_STATUS_NOT_FOUND,
   RES_STATUS_UNAUTORIZED,
 } from '../constants';
 
-export default async function handleError(
+export default async function errorHandler(
   { error, validationErrorMessage }: IErrorData,
   req: Request,
   res: Response,
   next: NextFunction,
 ) {
   try {
+    // console.log(error.code);
+    // console.log(error.name);
+    // console.log(error.message);
+    // console.log(error.keyValue);
     if (error.name === 'NotFound') {
       return res.status(RES_STATUS_NOT_FOUND).send({ message: error.message });
     }
@@ -38,6 +43,10 @@ export default async function handleError(
         .send({
           message: 'Передан невалидный _id',
         });
+    }
+
+    if (error.code === 11000 && error.message.includes('email')) {
+      return res.status(RES_STATUS_CONFLICT).send({ message: `Пользователь c email: ${error.keyValue.email} уже зарегистрирован` });
     }
 
     return res.status(RES_STATUS_INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' });
