@@ -15,10 +15,6 @@ export default async function errorHandler(
   next: NextFunction,
 ) {
   try {
-    // console.log(error.code);
-    // console.log(error.name);
-    // console.log(error.message);
-    // console.log(error.keyValue);
     if (error.name === 'NotFound') {
       return res.status(RES_STATUS_NOT_FOUND).send({ message: error.message });
     }
