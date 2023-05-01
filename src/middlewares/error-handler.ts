@@ -1,21 +1,14 @@
 import { NextFunction, Request, Response } from 'express';
-import { IErrorData, IUserRequest } from './types';
-import { RES_STATUS_BAD_REQUEST, RES_STATUS_INTERNAL_SERVER_ERROR, RES_STATUS_NOT_FOUND } from './constants';
+import { IErrorData } from '../types';
+import {
+  RES_STATUS_BAD_REQUEST,
+  RES_STATUS_CONFLICT,
+  RES_STATUS_INTERNAL_SERVER_ERROR,
+  RES_STATUS_NOT_FOUND,
+  RES_STATUS_UNAUTORIZED,
+} from '../constants';
 
-export function fakeAuthorization(
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) {
-  const reqCustom = req as IUserRequest;
-  reqCustom.user = {
-    _id: '6446b928069e26d802db63b3',
-  };
-
-  next();
-}
-
-export async function handleError(
+export default async function errorHandler(
   { error, validationErrorMessage }: IErrorData,
   req: Request,
   res: Response,
@@ -25,6 +18,14 @@ export async function handleError(
     if (error.name === 'NotFound') {
       return res.status(RES_STATUS_NOT_FOUND).send({ message: error.message });
     }
+    if (error.name === 'Unauthorized') {
+      return res.status(RES_STATUS_UNAUTORIZED).send({ message: error.message });
+    }
+
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(RES_STATUS_UNAUTORIZED).send({ message: 'Необходима авторизация' });
+    }
+
     if (error.name === 'ValidationError') {
       return res
         .status(RES_STATUS_BAD_REQUEST)
@@ -38,6 +39,10 @@ export async function handleError(
         .send({
           message: 'Передан невалидный _id',
         });
+    }
+
+    if (error.code === 11000 && error.message.includes('email')) {
+      return res.status(RES_STATUS_CONFLICT).send({ message: `Пользователь c email: ${error.keyValue.email} уже зарегистрирован` });
     }
 
     return res.status(RES_STATUS_INTERNAL_SERVER_ERROR).send({ message: 'Ошибка по умолчанию' });

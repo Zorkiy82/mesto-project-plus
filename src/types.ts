@@ -1,10 +1,13 @@
 import { Request } from 'express';
 import { Schema } from 'mongoose';
+import jwt from 'jsonwebtoken';
 
 export interface IUser {
   name: string;
   about: string;
   avatar: string;
+  email: string;
+  password: string;
 }
 
 export interface ICard {
@@ -21,5 +24,5 @@ export interface IErrorData{
 }
 
 export interface IUserRequest extends Request {
-  user?: { _id: string };
+  user?: jwt.JwtPayload;
 }

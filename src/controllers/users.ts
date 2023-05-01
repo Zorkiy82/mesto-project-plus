@@ -1,21 +1,63 @@
 import { NextFunction, Request, Response } from 'express';
-import User from '../models/user';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { IUserRequest } from '../types';
 import { RES_STATUS_OK, RES_STATUS_CREATED } from '../constants';
+import User from '../models/user';
+import NotFoundError from '../utils/not-found-error';
+import UnauthorizedError from '../utils/unauthorized-error';
 
-export const getUsers = async (
-  req: Request,
+// eslint-disable-next-line no-shadow, no-unused-vars
+enum GetUserAction {
+  // eslint-disable-next-line no-unused-vars
+  All = 'All',
+  // eslint-disable-next-line no-unused-vars
+  ById = 'ByID',
+  // eslint-disable-next-line no-unused-vars
+  Current = 'Current',
+}
+
+const handleGetUsers = async (
+  req: IUserRequest,
   res: Response,
   next: NextFunction,
+  action = GetUserAction.Current,
 ) => {
   try {
-    const user = await User.find({});
+    let user = null;
+    if (action === GetUserAction.All) user = await User.find({});
+    if (action === GetUserAction.ById) user = await User.findById(req.params.userId);
+    if (action === GetUserAction.Current) user = await User.findById(req.user?._id);
+
+    if (!user) {
+      throw new NotFoundError('Пользователь по указанному _id не найден');
+    }
+
     return res.status(RES_STATUS_OK).send(user);
   } catch (error) {
-    const errorData = { error };
-    return next(errorData);
+    return next({ error });
   }
 };
+
+export const getUsers = (
+  req: IUserRequest,
+  res: Response,
+  next: NextFunction,
+) => handleGetUsers(req, res, next, GetUserAction.All);
+
+export const getUserById = (
+  req: IUserRequest,
+  res: Response,
+  next: NextFunction,
+) => handleGetUsers(req, res, next, GetUserAction.ById);
+
+export const getCurentUser = (
+  req: IUserRequest,
+  res: Response,
+  next: NextFunction,
+) => handleGetUsers(req, res, next, GetUserAction.Current);
+
+// -------------------------------------------------------------
 
 export const createUser = async (
   req: Request,
@@ -23,8 +65,24 @@ export const createUser = async (
   next: NextFunction,
 ) => {
   try {
-    const { name, about, avatar } = req.body;
-    const user = await User.create({ name, about, avatar });
+    const {
+      name,
+      about,
+      avatar,
+      email,
+      password,
+    } = req.body;
+
+    const hash = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      name,
+      about,
+      avatar,
+      email,
+      password: hash,
+    });
+
     return res.status(RES_STATUS_CREATED).send(user);
   } catch (error) {
     const errorData = {
@@ -36,25 +94,7 @@ export const createUser = async (
   }
 };
 
-export const getUserById = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const user = await User.findById(req.params.userId);
-    if (!user) {
-      const error = new Error('Пользователь по указанному _id не найден');
-      error.name = 'NotFound';
-      throw error;
-    }
-
-    return res.status(RES_STATUS_OK).send(user);
-  } catch (error) {
-    const errorData = { error };
-    return next(errorData);
-  }
-};
+// -------------------------------------------------------------
 
 const updateUser = async (
   req: IUserRequest,
@@ -63,26 +103,24 @@ const updateUser = async (
   expectedKeys = ['name', 'about', 'avatar'],
 ) => {
   try {
-    const newUserData = new Map();
+    const newUser = new Map();
 
     expectedKeys.forEach((key) => {
       const keyData = req.body[key];
       if (keyData) {
-        newUserData.set(key, keyData);
+        newUser.set(key, keyData);
       }
     });
     const user = await User.findByIdAndUpdate(
       req.user?._id,
-      Object.fromEntries(newUserData),
+      Object.fromEntries(newUser),
       {
         new: true,
         runValidators: true,
       },
     );
     if (!user) {
-      const error = new Error('Пользователь по указанному _id не найден');
-      error.name = 'NotFound';
-      throw error;
+      throw new NotFoundError('Пользователь по указанному _id не найден');
     }
 
     return res.status(RES_STATUS_OK).send(user);
@@ -108,3 +146,30 @@ export const updateUserAvatar = (
   res: Response,
   next: NextFunction,
 ) => updateUser(req, res, next, ['avatar']);
+
+// -------------------------------------------------------------
+
+export const login = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email }).select('+password');
+    const isMatches = await bcrypt.compare(password, String(user?.password));
+    let token = '';
+    if (!isMatches) {
+      throw new UnauthorizedError('Неправильные почта или пароль');
+    }
+
+    if (user) {
+      token = jwt.sign(
+        { _id: user._id },
+        'some-secret-key',
+        { expiresIn: '7d' },
+      );
+    }
+
+    return res.status(RES_STATUS_OK).send({ token });
+  } catch (error) {
+    const errorData = { error };
+    return next(errorData);
+  }
+};
