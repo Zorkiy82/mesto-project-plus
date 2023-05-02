@@ -1,4 +1,3 @@
-import { celebrate, Joi } from 'celebrate';
 import { Router } from 'express';
 import {
   getCards,
@@ -7,16 +6,11 @@ import {
   dislikeCard,
   deleteCardById,
 } from '../controllers/cards';
-import { cardIdValidator } from '../utils/validation';
+import { cardIdValidator, createCardValidator } from '../utils/validation';
 
 const router = Router();
 
-router.post('/', celebrate({
-  body: Joi.object().keys({
-    name: Joi.string().min(2).max(30).required(),
-    link: Joi.string().uri().required(),
-  }).unknown(true),
-}), createCard);
+router.post('/', createCardValidator, createCard);
 router.get('/', getCards);
 router.delete('/:cardId', cardIdValidator, deleteCardById);
 router.put('/:cardId/likes', cardIdValidator, likeCard);

@@ -35,3 +35,29 @@ export const signupValidator = celebrate({
     password: Joi.string().required(),
   }).unknown(true),
 });
+
+export const createCardValidator = celebrate({
+  body: Joi.object().keys({
+    name: Joi.string().min(2).max(30).required(),
+    link: Joi.string().uri().required(),
+  }).unknown(true),
+});
+
+export const getUserByIdValidator = celebrate({
+  params: Joi.object().keys({
+    userId: Joi.string().hex().length(24).required(),
+  }),
+});
+
+export const updateUserProfileValidator = celebrate({
+  body: Joi.object().keys({
+    name: Joi.string().min(2).max(30).required(),
+    about: Joi.string().min(2).max(200).required(),
+  }),
+});
+
+export const updateUserAvatarValidator = celebrate({
+  body: Joi.object().keys({
+    avatar: Joi.string().uri().required(),
+  }),
+});
