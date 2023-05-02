@@ -24,16 +24,16 @@ const handleGetUsers = async (
   action = GetUserAction.Current,
 ) => {
   try {
-    let user = null;
-    if (action === GetUserAction.All) user = await User.find({});
-    if (action === GetUserAction.ById) user = await User.findById(req.params.userId);
-    if (action === GetUserAction.Current) user = await User.findById(req.user?._id);
+    let searchResult = null;
+    if (action === GetUserAction.All) searchResult = await User.find({});
+    if (action === GetUserAction.ById) searchResult = await User.findById(req.params.userId);
+    if (action === GetUserAction.Current) searchResult = await User.findById(req.user?._id);
 
-    if (!user) {
+    if (!searchResult) {
       throw new NotFoundError('Пользователь по указанному _id не найден');
     }
 
-    return res.status(RES_STATUS_OK).send(user);
+    return res.status(RES_STATUS_OK).send(searchResult);
   } catch (error) {
     return next({ error });
   }
@@ -83,7 +83,13 @@ export const createUser = async (
       password: hash,
     });
 
-    return res.status(RES_STATUS_CREATED).send(user);
+    return res.status(RES_STATUS_CREATED).send({
+      _id: user._id,
+      name: user.name,
+      about: user.about,
+      avatar: user.avatar,
+      email: user.email,
+    });
   } catch (error) {
     const errorData = {
       error,
@@ -153,7 +159,10 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
   try {
     const { email, password } = req.body;
     const user = await User.findOne({ email }).select('+password');
-    const isMatches = await bcrypt.compare(password, String(user?.password));
+    if (!user) {
+      throw new UnauthorizedError('Неправильные почта или пароль');
+    }
+    const isMatches = await bcrypt.compare(password, user.password);
     let token = '';
     if (!isMatches) {
       throw new UnauthorizedError('Неправильные почта или пароль');

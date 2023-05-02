@@ -15,15 +15,22 @@ export function urlValidator(str: string) {
 
 export const cardIdValidator = celebrate({
   params: Joi.object().keys({
-    cardId: Joi.string().alphanum().length(24).required(),
+    cardId: Joi.string().hex().length(24).required(),
   }),
 });
 
-export const userDataValidator = celebrate({
+export const signinValidator = celebrate({
+  body: Joi.object().keys({
+    email: Joi.string().email().required(),
+    password: Joi.string().required(),
+  }).unknown(true),
+});
+
+export const signupValidator = celebrate({
   body: Joi.object().keys({
     name: Joi.string().min(2).max(30).default(defaultUser.name),
     about: Joi.string().min(2).max(200).default(defaultUser.about),
-    avatar: Joi.string().min(7).default(defaultUser.avatar),
+    avatar: Joi.string().uri().default(defaultUser.avatar),
     email: Joi.string().email().required(),
     password: Joi.string().required(),
   }).unknown(true),
