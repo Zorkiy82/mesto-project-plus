@@ -6,7 +6,7 @@ import errorHandler from './middlewares/error-handler';
 import auth from './middlewares/auth';
 import router from './routes/index';
 import { errorLogger, requestLogger } from './middlewares/logger';
-import { userDataValidator } from './utils/validation';
+import { signinValidator, signupValidator } from './utils/validation';
 
 const { PORT = 3000 } = process.env;
 
@@ -18,8 +18,8 @@ mongoose.connect('mongodb://127.0.0.1:27017/mestodb');
 app.use(json());
 app.use(requestLogger);
 
-app.post('/signin', userDataValidator, login);
-app.post('/signup', userDataValidator, createUser);
+app.post('/signin', signinValidator, login);
+app.post('/signup', signupValidator, createUser);
 
 app.use(auth);
 

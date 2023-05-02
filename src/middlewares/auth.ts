@@ -15,14 +15,10 @@ const auth = async (
       throw new UnauthorizedError('Необходима авторизация');
     }
 
-    try {
-      const token = authorization.replace('Bearer ', '');
-      const payload = jwt.verify(token, 'some-secret-key');
-      const reqCustom = req as IUserRequest;
-      reqCustom.user = typeof payload !== 'string' ? payload : {};
-    } catch (error) {
-      return next({ error });
-    }
+    const token = authorization.replace('Bearer ', '');
+    const payload = jwt.verify(token, 'some-secret-key');
+    const reqCustom = req as IUserRequest;
+    reqCustom.user = typeof payload !== 'string' ? payload : {};
 
     return next();
   } catch (error) {

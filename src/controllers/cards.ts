@@ -45,7 +45,8 @@ export const deleteCardById = async (req: IUserRequest, res: Response, next: Nex
       throw new UnauthorizedError('Карточка создана другим пользователем');
     }
 
-    await Сard.findByIdAndDelete(req.params.cardId);
+    card.deleteOne();
+
     return res.status(RES_STATUS_OK).send({ message: 'Пост удалён' });
   } catch (error) {
     const errorData = { error };
